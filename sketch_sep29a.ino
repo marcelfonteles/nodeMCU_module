@@ -167,7 +167,6 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
         char sendInfo [24];
         information.toCharArray(sendInfo, 24);
         MQTT.publish(TOPICO_PUBLISH, sendInfo);
-        MQTT.publish(TOPICO_PUBLISH, sendInfo);
     }
      
 }
