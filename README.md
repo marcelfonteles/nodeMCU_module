@@ -9,8 +9,8 @@
 - Turn on and Turn off some leds
 - Topics:
 ```
-esp/recebe -> nodeMCU listen this topic
-esp/envia  -> nodeMCU send information in this topic
+devices/recebe -> nodeMCU listen this topic
+devices/envia  -> nodeMCU send information in this topic
 ```     
 - Messages:
 ```
