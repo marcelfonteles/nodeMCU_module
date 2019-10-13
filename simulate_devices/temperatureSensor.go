@@ -3,22 +3,42 @@ package main
 import (
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"math/rand"
 	"net"
 	"os"
+	"runtime"
 	"strconv"
+	"strings"
 	"time"
 )
 
+var currentTemperature int = 23
+
 var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	fmt.Printf("TOPIC: %s\n", msg.Topic())
-	fmt.Printf("MSG: %s\n", msg.Payload())
+	command := string(msg.Payload())
+	index := strings.Index(command, ":")
+	if index != -1 {
+		if command[:index] == "up" {
+			increase, err := strconv.Atoi(command[index+1:])
+			if err != nil {
+				fmt.Println(err)
+			}
+			currentTemperature += increase
+		} else if command[:index] == "down" {
+			decrease, err := strconv.Atoi(command[index+1:])
+			if err != nil {
+				fmt.Println(err)
+			}
+			currentTemperature -= decrease
+		}
+	} else if string(msg.Payload()) == "INFO" {
+		identifyYourself(client)
+	}
 }
 
-func connectionToBroker(ipAddress string, port string, name string) mqtt.Client {
+func connectionToBroker(ipAddress string, port string, name string) (mqtt.Client) {
 	opts := mqtt.NewClientOptions().AddBroker("tcp://" + ipAddress + ":" + port).SetClientID(name)
-	opts.SetKeepAlive(2 * time.Second)
-	opts.SetDefaultPublishHandler(f)
+	opts.SetKeepAlive(3600 * time.Minute)
+	//opts.SetDefaultPublishHandler(f)
 	opts.SetPingTimeout(1 * time.Second)
 
 	c := mqtt.NewClient(opts)
@@ -28,7 +48,6 @@ func connectionToBroker(ipAddress string, port string, name string) mqtt.Client 
 	}
 
 	return c
-
 }
 
 func getIp() string {
@@ -49,8 +68,9 @@ func getIp() string {
 }
 
 func sendTemperature(c mqtt.Client) {
-	temperature := strconv.Itoa(rand.Intn(35 - 15) + 15)
+	temperature := strconv.Itoa(currentTemperature)
 	c.Publish("devices/envia", 0, false, "temperatureSensor;" + temperature + "°C;")
+	time.Sleep(15 * time.Second)
 }
 
 func identifyYourself(c mqtt.Client) {
@@ -58,10 +78,11 @@ func identifyYourself(c mqtt.Client) {
 	c.Publish("devices/envia", 0, false, "temperatureSensor;"+ ipAddress + ";")
 }
 
+
 func main() {
 	// CONEXÃO COM O BROKER MQTT
 	c := connectionToBroker("3.15.205.236", "1883", "temperatureSensor")
-	if token := c.Subscribe("devices/recebe", 0, nil); token.Wait() && token.Error() != nil {
+	if token := c.Subscribe("devices/recebe", 2, f); token.Wait() && token.Error() != nil {
 		fmt.Println(token.Error())
 		os.Exit(1)
 	} else {
@@ -70,25 +91,11 @@ func main() {
 
 	// LAÇO INFINITO DE FUNCIONAMENTO
 	for {
-		// De tempos em tempos ele envia sua temperatura
-		go sendTemperature(c)
-		time.Sleep(30 * time.Second)
-
-
-
+		// 7 go routines até aqui
+		if runtime.NumGoroutine() == 7 {
+			// De tempos em tempos ele envia sua temperatura
+			go sendTemperature(c)
+		}
+		time.Sleep(2 * time.Second)
 	}
-
-	//text := fmt.Sprintf("LA")
-	//token := c.Publish("devices/recebe", 0, false, text)
-	//token.Wait()
-	//
-	//if token := c.Unsubscribe("devices/recebe"); token.Wait() && token.Error() != nil {
-	//	fmt.Println(token.Error())
-	//	os.Exit(1)
-	//}
-	//
-	//c.Disconnect(250)
-	//
-	//time.Sleep(1 * time.Second)
-
 }
