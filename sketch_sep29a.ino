@@ -7,8 +7,8 @@
  
 //defines:
 //defines de id mqtt e tópicos para publicação e subscribe
-#define TOPICO_SUBSCRIBE "esp/recebe"     //tópico MQTT de escuta
-#define TOPICO_PUBLISH   "esp/envia"    //tópico MQTT de envio de informações para Broker
+#define TOPICO_SUBSCRIBE "devices/recebe"     //tópico MQTT de escuta
+#define TOPICO_PUBLISH   "devices/envia"    //tópico MQTT de envio de informações para Broker
                                                    //IMPORTANTE: recomendamos fortemente alterar os nomes
                                                    //            desses tópicos. Caso contrário, há grandes
                                                    //            chances de você controlar e monitorar o NodeMCU
@@ -166,6 +166,7 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
         information = "nodeMCU;" + information + ";";
         char sendInfo [24];
         information.toCharArray(sendInfo, 24);
+        MQTT.publish(TOPICO_PUBLISH, sendInfo);
         MQTT.publish(TOPICO_PUBLISH, sendInfo);
     }
      
