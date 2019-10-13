@@ -7,3 +7,16 @@
 ## Features
 - Broker MQTT on AWS
 - Turn on and Turn off some leds
+- Topics:
+```
+esp/recebe -> nodeMCU listen this topic
+esp/envia  -> nodeMCU send information in this topic
+```     
+- Messages:
+```
+"LR"   -> nodeMCU turn on red led
+"DR"   -> nodeMCU turn off red led
+"LG"   -> nodeMCU turn on green led
+"DG"   -> nodeMCU turn off green led
+"INFO" -> nodeMCU send information about himself
+```

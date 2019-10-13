@@ -118,37 +118,33 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
        msg += c;
     }
    
-    //toma ação dependendo da string recebida:
-    //verifica se deve colocar nivel alto de tensão na saída D0:
-    //IMPORTANTE: o Led já contido na placa é acionado com lógica invertida (ou seja,
-    //enviar HIGH para o output faz o Led apagar / enviar LOW faz o Led acender)
-    // LED VERMELHO
+    // DESLIGA LED VERMELHO
     if (msg.equals("DR"))
     {
         digitalWrite(D1, LOW);
         EstadoSaida = '1';
     }
  
-    //verifica se deve colocar nivel alto de tensão na saída D0:
+    // LIGA LED VERMELHO
     if (msg.equals("LR"))
     {
         digitalWrite(D1, HIGH);
         EstadoSaida = '0';
     }
-    // LED VERDE
+    // DESLIGA LED VERDE
     if (msg.equals("DG"))
     {
         digitalWrite(D0, LOW);
         EstadoSaida = '1';
     }
  
-    //verifica se deve colocar nivel alto de tensão na saída D0:
+    // LIGA LED VERDE:
     if (msg.equals("LG"))
     {
         digitalWrite(D0, HIGH);
         EstadoSaida = '0';
     }
-    // AMBOS OS LEDS
+    // DESLIGA AMBOS OS LEDS
     if (msg.equals("DA"))
     {
         digitalWrite(D0, LOW);
@@ -156,12 +152,21 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
         EstadoSaida = '1';
     }
  
-    //verifica se deve colocar nivel alto de tensão na saída D0:
+    // LIGA AMBOS OS LEDS
     if (msg.equals("LA"))
     {
         digitalWrite(D0, HIGH);
         digitalWrite(D1, HIGH);
         EstadoSaida = '0';
+    }
+    // Envia informacoes do dispositivo
+    if (msg.equals("INFO"))
+    {
+      String information =  WiFi.localIP().toString();
+        information = "nodeMCU;" + information + ";";
+        char sendInfo [24];
+        information.toCharArray(sendInfo, 24);
+        MQTT.publish(TOPICO_PUBLISH, sendInfo);
     }
      
 }
@@ -180,11 +185,11 @@ void reconnectMQTT()
         {
             Serial.println("Conectado com sucesso ao broker MQTT!");
             MQTT.subscribe(TOPICO_SUBSCRIBE); 
-            String IPaddress =  WiFi.localIP().toString();
-            char test [16];
-            IPaddress.toCharArray(test, 16);
-            MQTT.publish(TOPICO_PUBLISH, "nodeMCU;");
-            MQTT.publish(TOPICO_PUBLISH, test);
+            String information =  WiFi.localIP().toString();
+            information = "nodeMCU;" + information + ";";
+            char sendInfo [24];
+            information.toCharArray(sendInfo, 24);
+            MQTT.publish(TOPICO_PUBLISH, sendInfo);
         } 
         else
         {
