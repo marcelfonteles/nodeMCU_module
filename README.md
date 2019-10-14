@@ -23,9 +23,10 @@ devices/envia  -> nodeMCU send information in this topic
 ```
 2. Simulated Temparature Sensor
 ```
-"up:10"   -> increase temperature. Value specified after colon
-"down:10" -> decrease temperature. Value specified after colon
-"INFO"    -> Sensor sendo information about himself
+Receiver                 Topic                         Respond                 Topic
+"INFO"                   devices/recebe                about information       devices/envia
+"up:10"                  devices/temperature/recebe    increase temperature.   devices/temperature/envia
+"down:10"                devices/temperature/recebe    decrease temperature.   devices/temperature/envia
 ```
 3. Simulated Sound System
 ```

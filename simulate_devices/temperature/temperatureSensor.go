@@ -12,8 +12,18 @@ import (
 )
 
 var currentTemperature int = 23
+var identified bool = false
 
-var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+var maxTemp int = 25
+var minTemp int = 16
+
+var info mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+	if string(msg.Payload()) == "INFO" {
+		identifyYourself(client)
+	}
+}
+
+var actions mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	command := string(msg.Payload())
 	index := strings.Index(command, ":")
 	if index != -1 {
@@ -22,16 +32,29 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 			if err != nil {
 				fmt.Println(err)
 			}
-			currentTemperature += increase
+			if currentTemperature + increase > maxTemp {
+				currentTemperature = 25
+				client.Publish("devices/temperature/envia", 0, false, "temperatureSensor;max temp;25°C;")
+
+			} else {
+				currentTemperature += increase
+				client.Publish("devices/temperature/envia", 0, false, "temperatureSensor;"+ strconv.Itoa(currentTemperature) +"°C;")
+			}
+
 		} else if command[:index] == "down" {
 			decrease, err := strconv.Atoi(command[index+1:])
 			if err != nil {
 				fmt.Println(err)
 			}
-			currentTemperature -= decrease
+			if currentTemperature - decrease < minTemp {
+				currentTemperature = 16
+				client.Publish("devices/temperature/envia", 0, false, "temperatureSensor;min temp;16°C;")
+
+			} else {
+				currentTemperature -= decrease
+				client.Publish("devices/temperature/envia", 0, false, "temperatureSensor;"+ strconv.Itoa(currentTemperature) +"°C;")
+			}
 		}
-	} else if string(msg.Payload()) == "INFO" {
-		identifyYourself(client)
 	}
 }
 
@@ -78,16 +101,25 @@ func identifyYourself(c mqtt.Client) {
 	c.Publish("devices/envia", 0, false, "temperatureSensor;"+ ipAddress + ";")
 }
 
+func subscribe(c mqtt.Client, topic string, mHan mqtt.MessageHandler) mqtt.Client {
+	if token := c.Subscribe(topic, 2, mHan); token.Wait() && token.Error() != nil {
+		fmt.Println(token.Error())
+		os.Exit(1)
+	} else {
+		if !identified {
+			identifyYourself(c)
+			identified = true
+		}
+	}
+
+	return c
+}
 
 func main() {
 	// CONEXÃO COM O BROKER MQTT
 	c := connectionToBroker("3.15.205.236", "1883", "temperatureSensor")
-	if token := c.Subscribe("devices/recebe", 2, f); token.Wait() && token.Error() != nil {
-		fmt.Println(token.Error())
-		os.Exit(1)
-	} else {
-		identifyYourself(c)
-	}
+	subscribe(c, "devices/recebe", info)
+	subscribe(c, "devices/temperature/recebe", actions)
 
 	// LAÇO INFINITO DE FUNCIONAMENTO
 	for {
