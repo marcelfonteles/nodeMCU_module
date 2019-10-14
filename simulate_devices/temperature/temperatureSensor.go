@@ -92,7 +92,7 @@ func getIp() string {
 
 func sendTemperature(c mqtt.Client) {
 	temperature := strconv.Itoa(currentTemperature)
-	c.Publish("devices/envia", 0, false, "temperatureSensor;" + temperature + "°C;")
+	c.Publish("devices/temperatureSensor/envia", 0, false, "temperatureSensor;" + temperature + "°C;")
 	time.Sleep(15 * time.Second)
 }
 
