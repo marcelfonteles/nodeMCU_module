@@ -7,12 +7,11 @@
  
 //defines:
 //defines de id mqtt e tópicos para publicação e subscribe
-#define TOPICO_SUBSCRIBE "devices/recebe"     //tópico MQTT de escuta
-#define TOPICO_PUBLISH   "devices/envia"    //tópico MQTT de envio de informações para Broker
-                                                   //IMPORTANTE: recomendamos fortemente alterar os nomes
-                                                   //            desses tópicos. Caso contrário, há grandes
-                                                   //            chances de você controlar e monitorar o NodeMCU
-                                                   //            de outra pessoa.
+#define TOPICO_SUBSCRIBE_INFO "devices/recebe"     //tópico MQTT de escuta
+#define TOPICO_PUBLISH_INFO   "devices/envia"    //tópico MQTT de envio de informações para Broker
+#define TOPICO_SUBSCRIBE_ACTIONS "devices/esp/recebe"     
+#define TOPICO_PUBLISH_ACTIONS   "devices/esp/envia"   
+                                                   
 #define ID_MQTT  "HomeAut"     //id mqtt (para identificação de sessão)
                                //IMPORTANTE: este deve ser único no broker (ou seja, 
                                //            se um client MQTT tentar entrar com o mesmo 
@@ -46,7 +45,8 @@ int BROKER_PORT = 1883; // Porta do Broker MQTT
 //Variáveis e objetos globais
 WiFiClient espClient; // Cria o objeto espClient
 PubSubClient MQTT(espClient); // Instancia o Cliente MQTT passando o objeto espClient
-char EstadoSaida = '0';  //variável que armazena o estado atual da saída
+char estadoSaidaGreen = '1';
+char estadoSaidaRed = '1';//variável que armazena o estado atual da saída
   
 //Prototypes
 void initSerial();
@@ -121,35 +121,57 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
     // DESLIGA LED VERMELHO
     if (msg.equals("DR"))
     {
-        digitalWrite(D1, LOW);
-        EstadoSaida = '1';
+        if (estadoSaidaRed == '0') {
+          MQTT.publish(TOPICO_PUBLISH_ACTIONS, "nodeMCU;red led already turned off;");
+        } else {
+          digitalWrite(D1, LOW);
+          estadoSaidaRed = '0';
+          MQTT.publish(TOPICO_PUBLISH_ACTIONS, "nodeMCU;turning off red led;");
+        }        
     }
  
     // LIGA LED VERMELHO
     if (msg.equals("LR"))
     {
-        digitalWrite(D1, HIGH);
-        EstadoSaida = '0';
+         if (estadoSaidaRed == '1') {
+          MQTT.publish(TOPICO_PUBLISH_ACTIONS, "nodeMCU;red led already turned on;");
+        } else {
+          digitalWrite(D1, HIGH);
+          estadoSaidaRed = '1';
+          MQTT.publish(TOPICO_PUBLISH_ACTIONS, "nodeMCU;turning on red led;");
+        }          
     }
+    
     // DESLIGA LED VERDE
     if (msg.equals("DG"))
     {
-        digitalWrite(D0, LOW);
-        EstadoSaida = '1';
+        if (estadoSaidaGreen == '0') {
+          MQTT.publish(TOPICO_PUBLISH_ACTIONS, "nodeMCU;green led already turned off;");
+        } else {
+          digitalWrite(D0, LOW);
+          estadoSaidaGreen = '0';
+          MQTT.publish(TOPICO_PUBLISH_ACTIONS, "nodeMCU;turning off green led;");
+        }    
     }
  
     // LIGA LED VERDE:
     if (msg.equals("LG"))
-    {
-        digitalWrite(D0, HIGH);
-        EstadoSaida = '0';
+    {        
+        if (estadoSaidaGreen == '1') {
+          MQTT.publish(TOPICO_PUBLISH_ACTIONS, "nodeMCU;green led already turned on;");
+        } else {
+          digitalWrite(D0, HIGH);
+          estadoSaidaGreen = '1';
+          MQTT.publish(TOPICO_PUBLISH_ACTIONS, "nodeMCU;turning on green led;");
+        }    
+        
     }
     // DESLIGA AMBOS OS LEDS
     if (msg.equals("DA"))
     {
         digitalWrite(D0, LOW);
         digitalWrite(D1, LOW);
-        EstadoSaida = '1';
+        
     }
  
     // LIGA AMBOS OS LEDS
@@ -157,7 +179,7 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
     {
         digitalWrite(D0, HIGH);
         digitalWrite(D1, HIGH);
-        EstadoSaida = '0';
+        
     }
     // Envia informacoes do dispositivo
     if (msg.equals("INFO"))
@@ -166,7 +188,7 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length)
         information = "nodeMCU;" + information + ";";
         char sendInfo [24];
         information.toCharArray(sendInfo, 24);
-        MQTT.publish(TOPICO_PUBLISH, sendInfo);
+        MQTT.publish(TOPICO_PUBLISH_INFO, sendInfo);
     }
      
 }
@@ -184,12 +206,13 @@ void reconnectMQTT()
         if (MQTT.connect(ID_MQTT)) 
         {
             Serial.println("Conectado com sucesso ao broker MQTT!");
-            MQTT.subscribe(TOPICO_SUBSCRIBE); 
+            MQTT.subscribe(TOPICO_SUBSCRIBE_INFO); 
+            MQTT.subscribe(TOPICO_SUBSCRIBE_ACTIONS);
             String information =  WiFi.localIP().toString();
             information = "nodeMCU;" + information + ";";
             char sendInfo [24];
             information.toCharArray(sendInfo, 24);
-            MQTT.publish(TOPICO_PUBLISH, sendInfo);
+            MQTT.publish(TOPICO_PUBLISH_INFO, sendInfo);
         } 
         else
         {
@@ -244,10 +267,6 @@ void VerificaConexoesWiFIEMQTT(void)
 //Retorno: nenhum
 void EnviaEstadoOutputMQTT(void)
 {
-    if (EstadoSaida == '0')
-      
- 
-    if (EstadoSaida == '1')
  
     Serial.println("- Estado da saida D0 enviado ao broker!");
     delay(1000);
