@@ -59,10 +59,13 @@ var actions mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 }
 
 func connectionToBroker(ipAddress string, port string, name string) (mqtt.Client) {
+	//opts := mqtt.NewClientOptions().AddBroker("tcp://soldier.cloudmqtt.com:10290").SetClientID(name)
 	opts := mqtt.NewClientOptions().AddBroker("tcp://" + ipAddress + ":" + port).SetClientID(name)
 	opts.SetKeepAlive(3600 * time.Minute)
 	//opts.SetDefaultPublishHandler(f)
 	opts.SetPingTimeout(1 * time.Second)
+	//opts.SetUsername("slhhlhba")
+	//opts.SetPassword("cX2o65sDKOK_")
 
 	c := mqtt.NewClient(opts)
 

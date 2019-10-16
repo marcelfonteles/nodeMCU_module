@@ -40,6 +40,11 @@ const char* PASSWORD = "j55fonteles"; // Senha da rede WI-FI que deseja se conec
 // MQTT
 const char* BROKER_MQTT = "3.15.205.236"; //URL do broker MQTT que se deseja utilizar
 int BROKER_PORT = 1883; // Porta do Broker MQTT
+//const char* BROKER_MQTT = "soldier.cloudmqtt.com"; //URL do broker MQTT que se deseja utilizar
+//int BROKER_PORT = 10290; // Porta do Broker MQTT
+//const char* USER_MQTT = "slhhlhba";
+//const char* PASSWORD_MQTT = "cX2o65sDKOK_";
+
  
  
 //Variáveis e objetos globais
